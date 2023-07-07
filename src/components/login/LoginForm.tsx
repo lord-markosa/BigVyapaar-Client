@@ -3,12 +3,14 @@ import { connect } from "react-redux";
 import { View, StyleSheet } from "react-native";
 import Button from "../common/Button";
 import { Dispatch, RootState } from "../../store/store";
-import login from "../../actions/auth/login";
-import Heading from "../common/Heading";
+import authHandler from "../../actions/auth/authHandler";
+import Label from "../common/Label";
 import Input from "../common/Input";
 import validatePasswordCriteria from "../../utils/validatePasswordCriteria";
 import LoadingState from "../../schema/LoadingState";
 import LoadingOverlay from "../common/LoadingOverlay";
+import AuthActionType from "../../schema/AuthActionType";
+import color from "../../colorPalette";
 
 interface LogInFormProps {
     goToSignUpPage: () => void;
@@ -81,11 +83,15 @@ function LogInForm(
 
     return (
         <>
-            {props.loginState === LoadingState.pending ? (
+            {props.loginState === LoadingState.Pending ? (
                 <LoadingOverlay message="Logging you in..." />
             ) : (
                 <View style={styles.root}>
-                    <Heading label="Log In" />
+                    <Label
+                        label="Log In"
+                        labelStyle={{ fontSize: 28 }}
+                        containerStyle={{ marginBottom: 16 }}
+                    />
                     <Input
                         label="Phone Number"
                         textInputConfig={{
@@ -116,13 +122,13 @@ function LogInForm(
                         label="Login"
                         containerStyle={styles.buttonContainerStyle}
                         labelStyle={styles.buttonLabelStyle}
-                        androidRippleColor="#505050"
+                        androidRippleColor={color.theme1000}
                     />
                     <Button
                         onPress={props.goToSignUpPage}
                         label="Create an account"
                         containerStyle={styles.signUpButtonContainer}
-                        androidRippleColor="#989898"
+                        androidRippleColor={color.dark100}
                     />
                 </View>
             )}
@@ -138,11 +144,11 @@ const styles = StyleSheet.create({
     },
     buttonContainerStyle: {
         borderRadius: 8,
-        backgroundColor: "black",
+        backgroundColor: color.theme400,
     },
     signUpButtonContainer: {
         borderRadius: 8,
-        backgroundColor: "#D3D3D3",
+        backgroundColor: color.dark50,
     },
     buttonLabelStyle: {
         color: "white",
@@ -153,14 +159,20 @@ function mapState(state: RootState): LogInFormStateProps {
     const user = state.user;
     return {
         phoneNumber: user.phoneNumber ?? "",
-        loginState: user.loginState,
+        loginState: user.authState,
     };
 }
 
 function mapDispatch(dispatch: Dispatch): LogInFormDispatchProps {
     return {
         loginHandler: (phoneNumber: string, password: string): Promise<any> => {
-            return dispatch(login({ phoneNumber, password }));
+            return dispatch(
+                authHandler({
+                    phoneNumber,
+                    password,
+                    actionType: AuthActionType.Login,
+                })
+            );
         },
     };
 }

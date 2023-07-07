@@ -1,15 +1,17 @@
 import React from "react";
-import { StyleSheet, View, ScrollView } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { connect } from "react-redux";
 import Button from "../common/Button";
 import { Dispatch, RootState } from "../../store/store";
-import signUp from "../../actions/auth/signUp";
-import Heading from "../common/Heading";
+import Label from "../common/Label";
 import Input from "../common/Input";
 import validatePasswordCriteria from "../../utils/validatePasswordCriteria";
 import validateGstinCriteria from "../../utils/validateGstinCriteria";
 import LoadingState from "../../schema/LoadingState";
 import LoadingOverlay from "../common/LoadingOverlay";
+import authHandler from "../../actions/auth/authHandler";
+import AuthActionType from "../../schema/AuthActionType";
+import color from "../../colorPalette";
 
 interface SignUpFormProps {
     goToLoginPage: () => void;
@@ -119,11 +121,15 @@ function SignUpForm(
 
     return (
         <>
-            {props.signUpState === LoadingState.pending ? (
+            {props.signUpState === LoadingState.Pending ? (
                 <LoadingOverlay message="Creating your account..." />
             ) : (
                 <View style={styles.root}>
-                    <Heading label="Sign Up" />
+                    <Label
+                        label="Sign Up"
+                        labelStyle={{ fontSize: 28 }}
+                        containerStyle={{ marginBottom: 16 }}
+                    />
                     <Input
                         label="Name"
                         textInputConfig={{
@@ -158,10 +164,11 @@ function SignUpForm(
                         }}
                         invalid={!inputs.password.isValid}
                     />
-                    <Heading
+                    <Label
                         label="It should have atleast 6 digits, 1 capital letter, 1 small letter, 1 number, 1 special character"
                         labelStyle={styles.promptLabelStyle}
                         containerStyle={styles.promptContainerStyle}
+                        numberOfLines={2}
                     />
                     <Input
                         label="Confirm Password"
@@ -188,23 +195,24 @@ function SignUpForm(
                         }}
                         invalid={!inputs.gstin.isValid}
                     />
-                    <Heading
+                    <Label
                         label="Please provide the authentic GSTIN as per terms and conditions"
                         labelStyle={styles.promptLabelStyle}
                         containerStyle={styles.promptContainerStyle}
+                        numberOfLines={2}
                     />
                     <Button
                         onPress={onSignUp}
                         label="SignUp"
                         containerStyle={styles.buttonContainerStyle}
                         labelStyle={styles.buttonLabelStyle}
-                        androidRippleColor="#505050"
+                        androidRippleColor={color.theme1000}
                     />
                     <Button
                         onPress={props.goToLoginPage}
                         label="Use an existing account"
                         containerStyle={styles.loginButtonContainer}
-                        androidRippleColor="#989898"
+                        androidRippleColor={color.dark100}
                     />
                 </View>
             )}
@@ -220,18 +228,18 @@ const styles = StyleSheet.create({
     },
     buttonContainerStyle: {
         borderRadius: 8,
-        backgroundColor: "black",
+        backgroundColor: color.theme400,
     },
     buttonLabelStyle: {
         color: "white",
     },
     promptLabelStyle: {
-        color: "#c5c5c5",
+        color: color.dark100,
         fontSize: 12,
     },
     loginButtonContainer: {
         borderRadius: 8,
-        backgroundColor: "#D3D3D3",
+        backgroundColor: color.dark50,
     },
     promptContainerStyle: {
         marginVertical: 8,
@@ -241,7 +249,7 @@ const styles = StyleSheet.create({
 
 function mapState(state: RootState): SignUpFormStateProps {
     return {
-        signUpState: state.user.signUpState,
+        signUpState: state.user.authState,
     };
 }
 
@@ -253,7 +261,15 @@ function mapDispatch(dispatch: Dispatch): SignUpFormDispatchProps {
             password: string,
             gstin: string
         ): Promise<any> => {
-            return dispatch(signUp({ name, phoneNumber, password, gstin }));
+            return dispatch(
+                authHandler({
+                    name,
+                    phoneNumber,
+                    password,
+                    gstin,
+                    actionType: AuthActionType.SignUp,
+                })
+            );
         },
     };
 }

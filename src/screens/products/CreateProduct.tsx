@@ -1,13 +1,15 @@
 import { View, StyleSheet, ScrollView } from "react-native";
 import React from "react";
 import Button from "../../components/common/Button";
-import Heading from "../../components/common/Heading";
+import Label from "../../components/common/Label";
 import Input from "../../components/common/Input";
 import { Dispatch, RootState } from "../../store/store";
 import { connect } from "react-redux";
-import getProductDetails from "../../actions/product/getProductDetails";
-import GetProductDetailsActionType from "../../schema/GetProductDetailsActionType";
+import getProductDetails from "../../actions/product/productHandler";
+import GetProductDetailsActionType from "../../schema/ProductActionType";
 import { CreateProductScreenNavigationProp } from "../../schema/ReactNavigation";
+import { publish } from "../../store/ably";
+import color from "../../colorPalette";
 
 interface CreateProductProps {
     navigation: CreateProductScreenNavigationProp;
@@ -87,6 +89,8 @@ function CreateProduct(
             return;
         }
 
+        // add conditions for pending request
+
         props
             .onChangeProducts(
                 props.token,
@@ -95,7 +99,7 @@ function CreateProduct(
                 inputs.price.value
             )
             .then(({ payload }) => {
-                if (!payload.validationError) {
+                if (!payload?.validationError) {
                     setInputs(getDefaultInputs());
                     onClose();
                 } else {
@@ -112,7 +116,11 @@ function CreateProduct(
             style={styles.root}
             contentContainerStyle={styles.contentStyle}
         >
-            <Heading label="Create product" />
+            <Label
+                label="Create product"
+                containerStyle={{ marginTop: 16 }}
+                labelStyle={{ fontSize: 28 }}
+            />
             <Input
                 label="Name"
                 textInputConfig={{
@@ -149,13 +157,13 @@ function CreateProduct(
                         ...styles.buttonContainerDark,
                     }}
                     labelStyle={styles.buttonText}
-                    androidRippleColor="#505050"
+                    androidRippleColor={color.theme1000}
                 />
                 <Button
                     onPress={onClose}
                     label="Cancel"
                     containerStyle={styles.buttonContainerStyle}
-                    androidRippleColor="#d9d9d9"
+                    androidRippleColor={color.dark100}
                 />
             </View>
         </ScrollView>
@@ -169,7 +177,6 @@ const styles = StyleSheet.create({
     contentStyle: {
         flexGrow: 1,
         marginHorizontal: 20,
-
         alignItems: "flex-start",
         justifyContent: "center",
     },
@@ -183,10 +190,10 @@ const styles = StyleSheet.create({
     buttonContainerStyle: {
         flex: 1,
         borderRadius: 8,
-        backgroundColor: "#D3D3D3",
+        backgroundColor: color.dark50,
     },
     buttonContainerDark: {
-        backgroundColor: "black",
+        backgroundColor: color.theme400,
     },
     buttonText: {
         color: "white",

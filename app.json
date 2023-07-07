@@ -1,6 +1,6 @@
 {
     "expo": {
-        "name": "Bid Ask Trade",
+        "name": "Big Vyapaar",
         "slug": "ProjectV_client",
         "version": "1.0.0",
         "orientation": "portrait",
@@ -29,6 +29,13 @@
             "eas": {
                 "projectId": "6a36913f-99ac-4e30-8a0d-d8a0d6e9e3ac"
             }
+        },
+        "owner": "markosa",
+        "runtimeVersion": {
+            "policy": "sdkVersion"
+        },
+        "updates": {
+            "url": "https://u.expo.dev/6a36913f-99ac-4e30-8a0d-d8a0d6e9e3ac"
         }
     }
 }

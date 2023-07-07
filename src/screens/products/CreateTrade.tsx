@@ -1,19 +1,21 @@
 import React from "react";
 import { StyleSheet, View, ScrollView } from "react-native";
 import { connect } from "react-redux";
-import getProductDetails from "../../actions/product/getProductDetails";
+import getProductDetails from "../../actions/product/productHandler";
 import Button from "../../components/common/Button";
-import Heading from "../../components/common/Heading";
+import Label from "../../components/common/Label";
 import Input from "../../components/common/Input";
 import Address from "../../schema/Address";
-import GetProductDetailsActionType from "../../schema/GetProductDetailsActionType";
+import ProductActionType from "../../schema/ProductActionType";
 import ITrade from "../../schema/products/ITrade";
 import TradeType from "../../schema/products/TradeType";
 import {
     CreateTradeScreenNavigationProp,
     CreateTradeScreenRouteProp,
 } from "../../schema/ReactNavigation";
+import { setUserAddress } from "../../store/reducer/user/userSlice";
 import { Dispatch, RootState } from "../../store/store";
+import color from "../../colorPalette";
 
 interface CreateTradeProps {
     navigation: CreateTradeScreenNavigationProp;
@@ -22,6 +24,7 @@ interface CreateTradeProps {
 
 interface CreateTradeStateProps {
     token: string;
+    address: Address | null;
 }
 
 interface CreateTradeDispatchProps {
@@ -34,6 +37,7 @@ interface CreateTradeDispatchProps {
         quantity: string,
         tradeId?: string
     ) => Promise<any>;
+    updateAddress: (address: Address) => void;
 }
 
 interface IInput {
@@ -54,10 +58,10 @@ function CreateTrade(
         district: IInput;
         state: IInput;
         pincode: IInput;
-    }>(getDefaultInputs(null));
+    }>(getDefaultInputs(null, props.address));
 
     React.useEffect(() => {
-        setInputs(getDefaultInputs(trade));
+        setInputs(getDefaultInputs(trade, props.address));
     }, [trade]);
 
     const inputChangeHandler = (
@@ -130,25 +134,27 @@ function CreateTrade(
             return;
         }
 
+        const address = {
+            firstLine: inputs.firstLine.value,
+            secondLine: inputs.secondLine.value,
+            district: inputs.district.value,
+            state: inputs.state.value,
+            pincode: inputs.pincode.value,
+        };
+
         props
             .onTradeSubmit(
                 productId,
                 props.token,
                 inputs.price.value,
-                {
-                    firstLine: inputs.firstLine.value,
-                    secondLine: inputs.secondLine.value,
-                    district: inputs.district.value,
-                    state: inputs.state.value,
-                    pincode: inputs.pincode.value,
-                },
+                address,
                 tradeType,
                 inputs.quantity.value,
                 trade?._id
             )
             .then(({ payload }) => {
                 if (!payload.validationError) {
-                    setInputs(getDefaultInputs(null));
+                    setInputs(getDefaultInputs(null, address));
                     onClose();
                 } else {
                     if (payload.validationPath === "address") {
@@ -170,6 +176,7 @@ function CreateTrade(
                     }
                 }
             });
+        props.updateAddress(address);
     }, [inputs, trade, props.token, productId, tradeType]);
 
     return (
@@ -177,10 +184,10 @@ function CreateTrade(
             style={styles.root}
             contentContainerStyle={styles.contentStyle}
         >
-            <Heading
-                label={`Create your ${
-                    tradeType === TradeType.Bid ? "bid" : "ask"
-                }`}
+            <Label
+                label={`${tradeType === TradeType.Bid ? "Bid" : "Ask"}`}
+                containerStyle={{ marginTop: 16 }}
+                labelStyle={{ fontSize: 28 }}
             />
             <Input
                 label="Price"
@@ -254,13 +261,13 @@ function CreateTrade(
                         ...styles.buttonContainerDark,
                     }}
                     labelStyle={styles.buttonText}
-                    androidRippleColor="#505050"
+                    androidRippleColor={color.theme1000}
                 />
                 <Button
                     onPress={onClose}
                     label="Cancel"
                     containerStyle={styles.buttonContainerStyle}
-                    androidRippleColor="#d9d9d9"
+                    androidRippleColor={color.dark100}
                 />
             </View>
         </ScrollView>
@@ -274,17 +281,8 @@ const styles = StyleSheet.create({
     contentStyle: {
         flexGrow: 1,
         marginHorizontal: 20,
-
         alignItems: "flex-start",
         justifyContent: "center",
-    },
-    centeredView: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "white",
-        borderRadius: 20,
-        padding: 35,
     },
     buttonsContainer: {
         width: "100%",
@@ -296,26 +294,38 @@ const styles = StyleSheet.create({
     buttonContainerStyle: {
         flex: 1,
         borderRadius: 8,
-        backgroundColor: "#D3D3D3",
+        backgroundColor: color.dark50,
     },
     buttonContainerDark: {
-        backgroundColor: "black",
+        backgroundColor: color.theme400,
     },
     buttonText: {
         color: "white",
     },
 });
 
-function getDefaultInputs(trade: ITrade | null) {
+function getDefaultInputs(trade: ITrade | null, address: Address | null) {
     return {
         price: { value: trade?.price ?? "", isValid: true },
         quantity: { value: trade?.quantity ?? "", isValid: true },
-        firstLine: { value: trade?.address.firstLine ?? "", isValid: true },
-        secondLine: { value: trade?.address.secondLine ?? "", isValid: true },
-        district: { value: trade?.address.district ?? "", isValid: true },
-        state: { value: trade?.address.state ?? "", isValid: true },
+        firstLine: {
+            value: trade?.address.firstLine ?? address?.firstLine ?? "",
+            isValid: true,
+        },
+        secondLine: {
+            value: trade?.address.secondLine ?? address?.secondLine ?? "",
+            isValid: true,
+        },
+        district: {
+            value: trade?.address.district ?? address?.district ?? "",
+            isValid: true,
+        },
+        state: {
+            value: trade?.address.state ?? address?.state ?? "",
+            isValid: true,
+        },
         pincode: {
-            value: trade?.address.pincode.toString() ?? "",
+            value: trade?.address.pincode.toString() ?? address?.pincode ?? "",
             isValid: true,
         },
     };
@@ -324,6 +334,7 @@ function getDefaultInputs(trade: ITrade | null) {
 function mapState(state: RootState): CreateTradeStateProps {
     return {
         token: state.user.token ?? "",
+        address: state.user.address,
     };
 }
 
@@ -341,7 +352,7 @@ function mapDispatch(dispatch: Dispatch): CreateTradeDispatchProps {
             return dispatch(
                 tradeId
                     ? getProductDetails({
-                          actionType: GetProductDetailsActionType.UpdateTrade,
+                          actionType: ProductActionType.UpdateTrade,
                           productId,
                           tradeId,
                           token,
@@ -351,7 +362,7 @@ function mapDispatch(dispatch: Dispatch): CreateTradeDispatchProps {
                           quantity,
                       })
                     : getProductDetails({
-                          actionType: GetProductDetailsActionType.CreateTrade,
+                          actionType: ProductActionType.CreateTrade,
                           productId,
                           token,
                           price,
@@ -360,6 +371,9 @@ function mapDispatch(dispatch: Dispatch): CreateTradeDispatchProps {
                           quantity,
                       })
             );
+        },
+        updateAddress: (address: Address) => {
+            dispatch(setUserAddress(address));
         },
     };
 }

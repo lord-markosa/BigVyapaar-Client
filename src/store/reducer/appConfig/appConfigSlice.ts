@@ -1,5 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import Address from "../../../schema/Address";
 import AppConfigState from "../../../schema/appConfig/AppConfigState";
+import LoadingState from "../../../schema/LoadingState";
 
 interface RequestDetails {
     productId: string;
@@ -10,6 +12,7 @@ interface RequestDetails {
 interface ConnectionDetails {
     userName: string;
     phoneNumber: string;
+    address: Address;
 }
 
 const initialRequestConfirmDailogState = {
@@ -23,17 +26,28 @@ const initialIConnectionDailogState = {
     visible: false,
     userName: null,
     phoneNumber: null,
+    address: null,
 };
 
 const initialState: AppConfigState = {
     requestConfiirmDailog: initialRequestConfirmDailogState,
     connectionDailog: initialIConnectionDailogState,
+    bootState: LoadingState.Idle,
 };
 
 const appConfigSlice = createSlice({
     name: "user",
     initialState,
     reducers: {
+        // BOOT STATE
+
+        setBootState: (
+            state: AppConfigState,
+            action: PayloadAction<LoadingState>
+        ) => {
+            state.bootState = action.payload;
+        },
+
         // REQUEST CONFIRM DAILOG
 
         onShowRequestConfirmDailog: (
@@ -61,6 +75,7 @@ const appConfigSlice = createSlice({
             state.connectionDailog.visible = true;
             state.connectionDailog.userName = action.payload.userName;
             state.connectionDailog.phoneNumber = action.payload.phoneNumber;
+            state.connectionDailog.address = action.payload.address;
         },
 
         onCloseConnectionDailog: (state: AppConfigState) => {
@@ -74,6 +89,7 @@ export const {
     onCloseRequestConfirmDailog,
     onShowConnectionDailog,
     onCloseConnectionDailog,
+    setBootState,
 } = appConfigSlice.actions;
 
 export default appConfigSlice.reducer;

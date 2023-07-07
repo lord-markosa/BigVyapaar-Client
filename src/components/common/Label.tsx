@@ -6,17 +6,22 @@ import {
     TextStyle,
     ViewStyle,
 } from "react-native";
+import color from "../../colorPalette";
 
 interface HeadingProps {
     label: string;
     labelStyle?: StyleProp<TextStyle>;
     containerStyle?: StyleProp<ViewStyle>;
+    numberOfLines?: number;
 }
 
-export default function Heading(props: HeadingProps) {
+export default function Label(props: HeadingProps) {
     return (
         <View style={[styles.root, props.containerStyle]}>
-            <Text style={[styles.label, props.labelStyle]} numberOfLines={1}>
+            <Text
+                style={[styles.label, props.labelStyle]}
+                numberOfLines={props.numberOfLines ?? 1}
+            >
                 {props.label}
             </Text>
         </View>
@@ -25,11 +30,11 @@ export default function Heading(props: HeadingProps) {
 
 const styles = StyleSheet.create({
     root: {
-        marginVertical: 16,
-        marginHorizontal: 8,
+        margin: 4,
     },
     label: {
-        fontFamily: "MerriweatherRegular",
-        fontSize: 36,
+        fontFamily: "Lora",
+        color: color.dark800,
+        fontSize: 12,
     },
 });

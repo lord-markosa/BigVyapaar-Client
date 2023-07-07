@@ -1,56 +1,53 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AxiosError } from "axios";
-import GetProductDetailsActionType from "../../schema/GetProductDetailsActionType";
+import ProductActionType from "../../schema/ProductActionType";
 import ICreateProductRequest from "../../schema/servicesSchema/ICreateProductRequest";
 import ICreateTradeRequest from "../../schema/servicesSchema/ICreateTradeRequest";
-import IFetchProductDetailsRequest from "../../schema/servicesSchema/IFetchProductDetailsRequest";
 import IUpdateTradeRequest from "../../schema/servicesSchema/IUpdateTradeRequest";
 import createProductServiceCall from "../../services/products/createProductServiceCall";
-import fetchProductDetailsServiceCall from "../../services/products/fetchProductDetailsServiceCall";
 import createTradeServiceCall from "../../services/trade/createTradeServiceCall";
 import updateTradeServiceCall from "../../services/trade/updateTradeServiceCall";
+import { publish } from "../../store/ably";
+import cacheUserAddress from "../../utils/cacheUserAddress";
 import createError from "../../utils/createError";
 
 type ParamsType = (
-    | IFetchProductDetailsRequest
     | ICreateTradeRequest
     | IUpdateTradeRequest
     | ICreateProductRequest
 ) & {
-    actionType: GetProductDetailsActionType;
+    actionType: ProductActionType;
 };
 
-const getProductDetails = createAsyncThunk(
-    "productDetails/all",
+const productHandler = createAsyncThunk(
+    "product",
     async (params: ParamsType, { rejectWithValue }) => {
         let product;
         try {
             switch (params.actionType) {
-                case GetProductDetailsActionType.CreateTrade: {
-                    product = await createTradeServiceCall(
-                        params as ICreateTradeRequest
-                    );
-                    break;
-                }
-                case GetProductDetailsActionType.UpdateTrade: {
-                    product = await updateTradeServiceCall(
-                        params as IUpdateTradeRequest
-                    );
-                }
-                case GetProductDetailsActionType.FetchProduct: {
-                    product = await fetchProductDetailsServiceCall(
-                        params as IFetchProductDetailsRequest
-                    );
-                    break;
-                }
-                case GetProductDetailsActionType.CreateProduct: {
+                case ProductActionType.CreateProduct: {
                     product = await createProductServiceCall(
                         params as ICreateProductRequest
                     );
+                    publish(params.token, "create_product", product);
+                    product = null;
                     break;
                 }
-                default: {
-                    product = {};
+                case ProductActionType.CreateTrade: {
+                    product = await createTradeServiceCall(
+                        params as ICreateTradeRequest
+                    );
+                    publish(params.token, "create_trade", product);
+                    cacheUserAddress((params as ICreateTradeRequest).address);
+                    break;
+                }
+                case ProductActionType.UpdateTrade: {
+                    product = await updateTradeServiceCall(
+                        params as IUpdateTradeRequest
+                    );
+                    publish(params.token, "update_trade", product);
+                    cacheUserAddress((params as ICreateTradeRequest).address);
+                    break;
                 }
             }
             return product;
@@ -60,4 +57,4 @@ const getProductDetails = createAsyncThunk(
     }
 );
 
-export default getProductDetails;
+export default productHandler;

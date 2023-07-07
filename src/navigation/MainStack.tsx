@@ -12,44 +12,55 @@ import CreateTrade from "../screens/products/CreateTrade";
 import NewsDetails from "../screens/news/NewsDetails";
 import { MaterialIcons } from "@expo/vector-icons";
 import IconButton from "../components/common/IconButton";
-import { useDispatch } from "react-redux";
+import { connect } from "react-redux";
 import logoutHandler from "../actions/auth/logoutHandler";
+import Label from "../components/common/Label";
+import color from "../colorPalette";
+import { Dispatch, RootState } from "../store/store";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export default function UserHomeStack() {
-    const dispatch = useDispatch();
-    const logout = React.useCallback(() => {
-        logoutHandler(dispatch);
-    }, []);
+interface MainStackStateProps {
+    userName: string;
+}
 
+interface MainStackDispatchProps {
+    logout: () => void;
+}
+
+function MainStack(props: MainStackStateProps & MainStackDispatchProps) {
     return (
         <Stack.Navigator
             screenOptions={{
-                contentStyle: {
-                    ...styles.contentBackground,
-                },
+                contentStyle: styles.contentBackground,
                 animation: "slide_from_right",
                 statusBarStyle: "light",
                 statusBarColor: "black",
+                headerShadowVisible: false,
             }}
         >
             <Stack.Screen
                 name="Home"
                 component={Home}
                 options={{
-                    headerTitle: "",
-                    headerRight: (props) => (
+                    headerTitle: () => (
+                        <Label
+                            label={`Hey ${props.userName}`}
+                            labelStyle={styles.titleStyle}
+                            containerStyle={styles.titleContainer}
+                        />
+                    ),
+                    headerRight: () => (
                         <IconButton
-                            onPress={logout}
+                            onPress={props.logout}
                             containerStyle={styles.logoutButtonContainer}
-                            androidRippleColor="#d5d5d5"
+                            androidRippleColor={color.dark100}
                         >
                             <View style={styles.iconContainer}>
                                 <MaterialIcons
                                     name="logout"
                                     size={28}
-                                    color="black"
+                                    color={color.dark800}
                                 />
                             </View>
                         </IconButton>
@@ -60,9 +71,13 @@ export default function UserHomeStack() {
                 name="Details"
                 component={ProductDetails}
                 options={({ route }: { route: DetailsScreenRouteProp }) => ({
-                    title: route.params.name,
-                    headerTitleStyle: styles.detailsTitle,
-                    headerTitleAlign: "center",
+                    headerTitle: () => (
+                        <Label
+                            label={route.params.name}
+                            labelStyle={styles.titleStyle}
+                            containerStyle={styles.titleContainer}
+                        />
+                    ),
                     contentStyle: { ...styles.contentBackground, marginTop: 0 },
                 })}
             />
@@ -84,7 +99,13 @@ export default function UserHomeStack() {
                 name="NewsDetails"
                 component={NewsDetails}
                 options={{
-                    title: "Article",
+                    headerTitle: () => (
+                        <Label
+                            label={"Article"}
+                            labelStyle={styles.titleStyle}
+                            containerStyle={styles.titleContainer}
+                        />
+                    ),
                 }}
             />
         </Stack.Navigator>
@@ -92,9 +113,13 @@ export default function UserHomeStack() {
 }
 
 const styles = StyleSheet.create({
-    detailsTitle: {
-        fontFamily: "MerriweatherRegular",
-        fontSize: 28,
+    titleStyle: {
+        fontFamily: "Lora",
+        fontSize: 20,
+        fontWeight: "400",
+    },
+    titleContainer: {
+        maxWidth: 250,
     },
     contentBackground: {
         backgroundColor: "white",
@@ -108,3 +133,19 @@ const styles = StyleSheet.create({
         padding: 6,
     },
 });
+
+function mapState(state: RootState): MainStackStateProps {
+    return {
+        userName: state.user.name ?? "",
+    };
+}
+
+function mapDispatch(dispatch: Dispatch): MainStackDispatchProps {
+    return {
+        logout: () => {
+            logoutHandler(dispatch);
+        },
+    };
+}
+
+export default connect(mapState, mapDispatch)(MainStack);

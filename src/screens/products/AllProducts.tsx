@@ -12,6 +12,12 @@ import IconButton from "../../components/common/IconButton";
 import { MaterialIcons } from "@expo/vector-icons";
 import { CreateProductScreenNavigationProp } from "../../schema/ReactNavigation";
 import { useNavigation } from "@react-navigation/native";
+import {
+    addProduct,
+    updateProduct,
+} from "../../store/reducer/products/productsSlice";
+import { subscribe } from "../../store/ably";
+import color from "../../colorPalette";
 
 interface AllProductsStateProps {
     productLoadingState: LoadingState;
@@ -22,16 +28,28 @@ interface AllProductsStateProps {
 interface AllProductsDispatchProps {
     fetchProducts: (token: string) => void;
     logout: () => void;
+    addNewProduct: (product: Product) => void;
+    updateProduct: (product: Product) => void;
 }
 
 function AllProducts(props: AllProductsStateProps & AllProductsDispatchProps) {
     React.useEffect(() => {
-        if (props.productLoadingState !== LoadingState.success) {
+        if (props.productLoadingState !== LoadingState.Success) {
             props.fetchProducts(props.token);
         }
+        subscribe(props.token, "create_product", (msg) =>
+            props.addNewProduct(msg.data)
+        );
+        subscribe(props.token, "create_trade", (msg) => {
+            props.updateProduct(msg.data);
+        });
+        subscribe(props.token, "update_trade", (msg) => {
+            props.updateProduct(msg.data);
+        });
     }, []);
 
     const navigation = useNavigation<CreateProductScreenNavigationProp>();
+
     const openCreateProductHandler = () => {
         navigation.navigate("CreateProduct");
     };
@@ -39,7 +57,7 @@ function AllProducts(props: AllProductsStateProps & AllProductsDispatchProps) {
     return (
         <>
             <View style={styles.root}>
-                {props.productLoadingState === LoadingState.pending ? (
+                {props.productLoadingState === LoadingState.Pending ? (
                     <LoadingOverlay message="Loading..." />
                 ) : (
                     <>
@@ -48,7 +66,7 @@ function AllProducts(props: AllProductsStateProps & AllProductsDispatchProps) {
                             <IconButton
                                 onPress={openCreateProductHandler}
                                 containerStyle={styles.addIconContainer}
-                                androidRippleColor="#787878"
+                                androidRippleColor={color.theme1000}
                             >
                                 <MaterialIcons
                                     name="add"
@@ -73,12 +91,13 @@ const styles = StyleSheet.create({
     },
     addIconContainer: {
         margin: 0,
-        backgroundColor: "#696969",
+        backgroundColor: color.theme400,
+        opacity: 0.8,
         height: 60,
         width: 60,
         borderRadius: 30,
         position: "absolute",
-        bottom: 20,
+        bottom: 24,
     },
 });
 
@@ -98,6 +117,12 @@ function mapDispatch(dispatch: Dispatch): AllProductsDispatchProps {
         },
         logout: () => {
             logoutHandler(dispatch);
+        },
+        addNewProduct: (product: Product) => {
+            dispatch(addProduct(product));
+        },
+        updateProduct: (product: Product) => {
+            dispatch(updateProduct(product));
         },
     };
 }
